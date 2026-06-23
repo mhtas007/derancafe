@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dêran Café Menu</title>
+    <link rel="icon" type="image/png" href="https://scared-moccasin-vmjwkvdcjg.edgeone.app/cafe-logo.png">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM & Lucide -->
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@18.2.0",
+          "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
+          "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+          "lucide-react": "https://esm.sh/lucide-react@0.344.0"
+        }
+      }
+    </script>
+    <script type="module" src="https://esm.sh/run" defer></script>
+
+    <!-- Custom Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #050505;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .font-serif {
+            font-family: 'Cinzel', serif;
+        }
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .bg-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            object-position: center;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        .bg-video-fallback {
+            background: radial-gradient(ellipse at top_right, #7c2d12 0%, #171717 50%, #14532d 100%) !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { 
+          Coffee, Snowflake, Cherry, Cloud, Search, ArrowLeft, ChevronRight, 
+          Instagram, Phone, MapPin, ExternalLink, Info, X, Globe, Sparkles, Check, Utensils
+        } from 'lucide-react';
+
+        // --- Fallback Image Logic ---
+        // Since local assets won't load in this preview, we use a placeholder generator.
+        const getPlaceholder = (text) => `https://placehold.co/400x500/171717/d97706?text=${encodeURIComponent(text || 'Deran Cafe')}`;
+
+        const DeranMenu = () => {
+          const [lang, setLang] = useState('ku'); // 'ku', 'en'
+          const [view, setView] = useState('welcome'); // 'welcome', 'menu'
+          const [activeCategory, setActiveCategory] = useState('hookah');
+          const [activeSubCategory, setActiveSubCategory] = useState('all');
+          const [showInfoModal, setShowInfoModal] = useState(false);
+          const [showLangModal, setShowLangModal] = useState(false);
+          const [searchQuery, setSearchQuery] = useState('');
+          const [isLoaded, setIsLoaded] = useState(false);
+
+          useEffect(() => {
+            setIsLoaded(true);
+          }, []);
+
+          const dir = lang === 'en' ? 'ltr' : 'rtl';
+          const fontClass = lang === 'en' ? 'font-sans' : 'font-serif';
+
+          // --- CONFIGURATION ---
+          const contactInfo = {
+            phone: "0750 944 6863",
+            instagram: "@deran_cafe",
+            location: "Soran, Kurdistan",
+            instagramUrl: "https://instagram.com/deran_cafe",
+            locationUrl: "https://maps.app.goo.gl/2DYp3YfgZj4xe7559"
+          };
+
+          // --- IMAGES (Local paths preserved, but onError added in UI) ---
+          const images = {
+            cat_hookah: "https://inadequate-scarlet-slkomtsmge.edgeone.app/baghdadi.png",
+            cat_cold: "https://burning-apricot-sb8mtowsz3.edgeone.app/category-image-copy-0.png",
+            cat_coffee: "https://high-tan-h3opsxxajg.edgeone.app/category-image.png",
+            cat_sweets: "https://legislative-yellow-5xkz9eny9h.edgeone.app/category-image.png",
+            cat_fruit: "https://enthusiastic-white-lh44zrrnl9.edgeone.app/5e127b39-3270-4323-bc9a-ad6d2859a832.png",
+            cat_food: "assets/categories/food/category-image.png",
+            
+            // Hookah Items
+            royal_hookah: "https://inadequate-scarlet-slkomtsmge.edgeone.app/royal-hookah.png",
+            two_apples: "https://inadequate-scarlet-slkomtsmge.edgeone.app/two-apples.png",
+            lemon_mint_h: "https://inadequate-scarlet-slkomtsmge.edgeone.app/lemon-mint.png",
+            gum: "https://inadequate-scarlet-slkomtsmge.edgeone.app/gum.png",
+            head_change: "https://inadequate-scarlet-slkomtsmge.edgeone.app/head-change.png",
+            castro: "https://inadequate-scarlet-slkomtsmge.edgeone.app/castro.png",
+            baghdadi: "https://inadequate-scarlet-slkomtsmge.edgeone.app/baghdadi.png",
+            lemon: "https://inadequate-scarlet-slkomtsmge.edgeone.app/lemon.png",
+            ice_cream: "https://inadequate-scarlet-slkomtsmge.edgeone.app/ice-cream.png",
+            deran_1: "https://inadequate-scarlet-slkomtsmge.edgeone.app/deran-1.png",
+            deran_2: "https://inadequate-scarlet-slkomtsmge.edgeone.app/deran-2.png",
+            deran_3: "https://inadequate-scarlet-slkomtsmge.edgeone.app/deran-3.png",
+            deran_vip: "https://inadequate-scarlet-slkomtsmge.edgeone.app/deran-vip.png",
+            gum_melon: "https://inadequate-scarlet-slkomtsmge.edgeone.app/gum-melon.png",
+            fresh_shaddock: "https://inadequate-scarlet-slkomtsmge.edgeone.app/fresh-shaddock.png",
+            fresh_pineapple: "https://inadequate-scarlet-slkomtsmge.edgeone.app/fresh-pineapple.png",
+            english: "https://inadequate-scarlet-slkomtsmge.edgeone.app/english.png",
+            
+            // Cold Drink Items - Updated Base URL
+            red_strong: "https://resident-lavender-ctovyierrm.edgeone.app/red-strong.png",
+            jaguar: "https://unable-gold-25tsbfyi0f.edgeone.app/jaguar.jpg",
+            tiger: "https://resident-lavender-ctovyierrm.edgeone.app/tiger.png",
+            white_tiger: "https://resident-lavender-ctovyierrm.edgeone.app/white-tiger.png",
+            smart: "https://resident-lavender-ctovyierrm.edgeone.app/smart.png",
+            freeze: "https://resident-lavender-ctovyierrm.edgeone.app/freeze.png",
+            red_mexican: "https://resident-lavender-ctovyierrm.edgeone.app/red-mexican.png",
+            tiger_mexican: "https://resident-lavender-ctovyierrm.edgeone.app/tiger-mexican.png",
+            white_mexican: "https://resident-lavender-ctovyierrm.edgeone.app/white-mexican.png",
+            smart_mexican: "https://resident-lavender-ctovyierrm.edgeone.app/smart-mexican.png",
+            freeze_mexican: "https://resident-lavender-ctovyierrm.edgeone.app/freeze-mexican.png",
+            jaguar_mexican: "https://resident-lavender-ctovyierrm.edgeone.app/jaguar-mexican.png",
+            redbull: "https://resident-lavender-ctovyierrm.edgeone.app/red-bull.png",
+            tiger_pomegranate: "https://resident-lavender-ctovyierrm.edgeone.app/tiger-pomegranate.png",
+            redbull_pomegranate: "https://resident-lavender-ctovyierrm.edgeone.app/red-bull-pomegranate.png",
+            melon_juice: "https://resident-lavender-ctovyierrm.edgeone.app/melon-juice.png",
+            banana_milk: "https://pleased-crimson-okq8vbxsgi.edgeone.app/Gemini_Generated_Image_oy7hqeoy7hqeoy7h.png",
+            orange_juice: "https://resident-lavender-ctovyierrm.edgeone.app/orange-juice.png",
+            lemon_juice: "https://resident-lavender-ctovyierrm.edgeone.app/lemonada.png",
+            banana_milk_nutella: "https://resident-lavender-ctovyierrm.edgeone.app/banana-milk-nutella.png",
+            dragon_fruit: "https://resident-lavender-ctovyierrm.edgeone.app/dragon-fruit.png",
+            strawberry: "https://resident-lavender-ctovyierrm.edgeone.app/strawberry.png",
+            cocktail: "https://inevitable-brown-fb0biehz3b.edgeone.app/cocktail.jpg",
+            family_cocktail: "https://resident-lavender-ctovyierrm.edgeone.app/family-cocktail.png",
+            blueberry_mojito: "https://resident-lavender-ctovyierrm.edgeone.app/blueberry-mojito.png",
+            strawberry_mojito: "https://resident-lavender-ctovyierrm.edgeone.app/strawberry-mojito.png",
+            dragon_mojito: "https://resident-lavender-ctovyierrm.edgeone.app/dragon-mojito.png",
+            orange_mojito: "https://resident-lavender-ctovyierrm.edgeone.app/orange-mojito.png",
+            apple_mojito: "https://inevitable-brown-fb0biehz3b.edgeone.app/apple%20mojito.jpg",
+            plain_mojito: "https://empirical-lavender-4ntxlta4af.edgeone.app/plain.jpg",
+            pineapple_mojito: "https://closed-tan-umfozwoacz.edgeone.app/pineapple%20mijot.jpg",
+            pomegranate_mojito: "https://closed-tan-umfozwoacz.edgeone.app/unnamed%20(12).jpg",
+            lotus_milkshake: "https://resident-lavender-ctovyierrm.edgeone.app/lotus-milkshake.png",
+            oreo_milkshake: "https://resident-lavender-ctovyierrm.edgeone.app/oreo-milkshake.png",
+            nutella_milkshake: "https://resident-lavender-ctovyierrm.edgeone.app/milkshake.png",
+            cola: "https://resident-lavender-ctovyierrm.edgeone.app/cola.png",
+            ice_tea: "https://resident-lavender-ctovyierrm.edgeone.app/ice-tea.png",
+            gazoz: "https://resident-lavender-ctovyierrm.edgeone.app/gazoz.png",
+            soda: "https://resident-lavender-ctovyierrm.edgeone.app/soda.png",
+            
+            // New Image Keys for items that might need distinct images on the new server
+            strawberry_milk: "https://resident-lavender-ctovyierrm.edgeone.app/strawberry-milk.png",
+            deran_fruit: "https://resident-lavender-ctovyierrm.edgeone.app/deran-fruit.png",
+            deran_mojito: "https://resident-lavender-ctovyierrm.edgeone.app/deran-mojito.png",
+            
+            // Coffee Items
+            milk: "https://entire-yellow-ti42gl4ark.edgeone.app/milk.png",
+            nescafe: "https://entire-yellow-ti42gl4ark.edgeone.app/nescafe.png",
+            cappuccino: "https://entire-yellow-ti42gl4ark.edgeone.app/cappuccino.png",
+            hot_chocolate: "https://entire-yellow-ti42gl4ark.edgeone.app/hot-chocolate.png",
+            terebinth_coffee: "https://entire-yellow-ti42gl4ark.edgeone.app/terebinth-coffee.png",
+            turkish_coffee: "https://entire-yellow-ti42gl4ark.edgeone.app/turkish-coffee.png",
+            espresso: "https://entire-yellow-ti42gl4ark.edgeone.app/espresso.png",
+            americano: "https://entire-yellow-ti42gl4ark.edgeone.app/americano.png",
+            milk_nutella: "https://entire-yellow-ti42gl4ark.edgeone.app/milk-nutella.png",
+            milk_honey: "https://entire-yellow-ti42gl4ark.edgeone.app/milk-honey.png",
+            nescafe_milk: "https://entire-yellow-ti42gl4ark.edgeone.app/nescafe-milk.png",
+            ice_latte: "https://stiff-copper-nzvgntuynr.edgeone.app/ice%20latte.jpg",
+            spanish_latte: "https://moral-teal-gs59wtyfpp.edgeone.app/spanish%20latte.jpg",
+            latte: "assets/items/coffee/latte.png",
+            
+            // Sweet Items
+            trilece: "https://confident-beige-flap2ycp1z.edgeone.app/trilece.png",
+            mahalabi: "https://confident-beige-flap2ycp1z.edgeone.app/mahalabi.png",
+            waffle_stick: "https://ugliest-bronze-d9mujo3apz.edgeone.app/steck.jpg",
+            lotus_cake: "https://confident-beige-flap2ycp1z.edgeone.app/lotus-cake.png",
+            oreo_cake: "https://confident-beige-flap2ycp1z.edgeone.app/oreo-cake.png",
+            waffle_steak: "https://ugliest-bronze-d9mujo3apz.edgeone.app/steck.jpg",
+            pancake: "https://resonant-aquamarine-nd8cvt06dq.edgeone.app/mini%20panchake.jpg",
+            burger_pancake: "https://inevitable-brown-fb0biehz3b.edgeone.app/burger%20pancake.jpg",
+            plain_crepe: "https://resonant-aquamarine-nd8cvt06dq.edgeone.app/crepe.jpg",
+            dragon_waffle: "https://confident-beige-flap2ycp1z.edgeone.app/deran-waffle.png",
+            dragon_crepe: "https://confident-beige-flap2ycp1z.edgeone.app/deran-crepe.png",
+            crepe_roll: "https://specified-teal-qnw2odsrpr.edgeone.app/crepe%20rool.jpg",
+            delamun: "https://previous-silver-k67n4vaoyw.edgeone.app/Gemini_Generated_Image_iupzfsiupzfsiupz.png",
+
+
+            double_crepe: "https://closed-tan-umfozwoacz.edgeone.app/unnamed%20(11).jpg",
+            
+            // Fruit Items
+            small_fruit_plate: "https://doubtful-pink-j1pjfrcgss.edgeone.app/small-fruit-plate.png",
+            large_fruit_plate: "https://doubtful-pink-j1pjfrcgss.edgeone.app/large-fruit-plate.png",
+            family_fruit_plate: "https://enthusiastic-white-lh44zrrnl9.edgeone.app/5e127b39-3270-4323-bc9a-ad6d2859a832.png",
+            
+            // Food Items
+            chicken_burger: "https://intermediate-blush-qnxn1cri23.edgeone.app/chicken%20burger.png",
+            chicken_cheese_burger: "https://intermediate-blush-qnxn1cri23.edgeone.app/chicken%20cheese%20burger.png",
+            meat_burger: "https://intermediate-blush-qnxn1cri23.edgeone.app/meat-burger.png",
+            meat_cheese_burger: "https://intermediate-blush-qnxn1cri23.edgeone.app/meat%20cheese%20burger.png",
+            
+            chicken_doner: "https://intermediate-blush-qnxn1cri23.edgeone.app/chicken%20doner.png",
+            chicken_cheese_doner: "https://intermediate-blush-qnxn1cri23.edgeone.app/chicken%20cheese%20%20doner.png",
+            meat_doner: "https://intermediate-blush-qnxn1cri23.edgeone.app/meat%20doner.png",
+            meat_cheese_doner: "https://intermediate-blush-qnxn1cri23.edgeone.app/meat%20cheese%20doner.png",
+            mixed_doner: "https://intermediate-blush-qnxn1cri23.edgeone.app/mixed-doner.png",
+            
+            cheese_doner: "https://intermediate-blush-qnxn1cri23.edgeone.app/cheese-doner.png", // Fallback if used
+            doner_kebab: "https://intermediate-blush-qnxn1cri23.edgeone.app/doner-kebab.png", // Fallback if used
+            
+            family_pizza: "https://intermediate-blush-qnxn1cri23.edgeone.app/family-pizza.png",
+            large_family_pizza: "https://intermediate-blush-qnxn1cri23.edgeone.app/large-family-pizza.png",
+            large_pizza: "https://intermediate-blush-qnxn1cri23.edgeone.app/large-pizza.png",
+            medium_pizza: "https://intermediate-blush-qnxn1cri23.edgeone.app/medium-pizza.png",
+            mixed_burger: "https://intermediate-blush-qnxn1cri23.edgeone.app/mixed-burger.png",
+            pizza_cheese: "https://intermediate-blush-qnxn1cri23.edgeone.app/pizza-cheese.png",
+            pizza_meat: "https://intermediate-blush-qnxn1cri23.edgeone.app/pizza-meat.png",
+            pizza_mushroom: "https://intermediate-blush-qnxn1cri23.edgeone.app/pizza-mushroom.png",
+            pizza_vegetable: "https://intermediate-blush-qnxn1cri23.edgeone.app/pizza-vegetable.png",
+            crispy: "https://intermediate-blush-qnxn1cri23.edgeone.app/doner-kebab.png",
+            club_sandwich: "https://intermediate-blush-qnxn1cri23.edgeone.app/mixed-burger.png",
+            sandwich: "https://intermediate-blush-qnxn1cri23.edgeone.app/mixed-burger.png",
+            
+            fries: "https://intermediate-blush-qnxn1cri23.edgeone.app/french%20fries.png",
+            appetizers: "https://intermediate-blush-qnxn1cri23.edgeone.app/mixed-mezza-mixed-appetizers-arabic-appetizers-egyptian-cuisine-middle-eastern-food-arabian-mezza-arabian-cuisine-arabian-food_17430-40.avif",
+            
+            // New Image Keys
+            calzone: "https://intermediate-blush-qnxn1cri23.edgeone.app/calzons.png",
+            pizza_generic: "https://intermediate-blush-qnxn1cri23.edgeone.app/small%20pizza.png"
+          };
+
+          // --- DATA & TRANSLATIONS ---
+          const uiText = {
+            welcome: { ku: 'بەخێربێن بۆ دێران کافێ', en: 'Welcome to Dêran Cafe' },
+            selectLang: { ku: 'زمان', en: 'Language' },
+            currency: { ku: 'د.ع', en: 'IQD' },
+            call: { ku: 'پەیوەندی', en: 'Call Us' },
+            location: { ku: 'ناونیشان', en: 'Location' },
+            follow: { ku: 'فۆڵۆمان بکەن', en: 'Follow Us' },
+            close: { ku: 'داخستن', en: 'Close' },
+            info: { ku: 'زانیاری', en: 'Info' },
+            search: { ku: 'گەڕان...', en: 'Search...' },
+            searchResults: { ku: 'ئەنجامەکانی گەڕان', en: 'Search Results' },
+            noResults: { ku: 'هیچ ئەنجامێک نەدۆزرایەوە', en: 'No results found' },
+            poweredBy: { ku: 'پشتگیری کراوە لەلایەن', en: 'Powered by' }
+          };
+
+          const categories = [
+            { id: 'hookah', icon: Cloud, img: images.cat_hookah, label: { ku: 'نێرگەلە', en: 'Hookah' } },
+            { id: 'cold_drinks', icon: Snowflake, img: images.cat_cold, label: { ku: 'خواردنەوە ساردەکان', en: 'Cold Drinks' } },
+            { id: 'coffee', icon: Coffee, img: images.cat_coffee, label: { ku: 'قاوەکان', en: 'Coffee' } },
+            { id: 'sweets', icon: Cherry, img: images.cat_sweets, label: { ku: 'شیرینی', en: 'Sweets' } },
+            { id: 'fruit', icon: Cherry, img: images.cat_fruit, label: { ku: 'میوە', en: 'Fruit' } },
+            { id: 'food', icon: Utensils, img: images.cat_food, label: { ku: 'خواردن', en: 'Food' } },
+          ];
+
+          const subCategories = {
+            cold_drinks: [
+              { id: 'all', label: { ku: 'هەموو', en: 'All' } },
+              { id: 'energy', label: { ku: 'وزەبەخش', en: 'Energy' } },
+              { id: 'juice', label: { ku: 'شەربەت', en: 'Juice' } },
+              { id: 'mojito', label: { ku: 'موهیتۆ', en: 'Mojito' } },
+              { id: 'milkshake', label: { ku: 'میلک شەیک', en: 'Milkshake' } },
+              { id: 'soda', label: { ku: 'گازی', en: 'Soda' } },
+            ],
+            coffee: [
+              { id: 'all', label: { ku: 'هەموو', en: 'All' } },
+              { id: 'hot', label: { ku: 'قاوەی گەرم', en: 'Hot Coffee' } },
+              { id: 'cold', label: { ku: 'قاوەی سارد', en: 'Cold Coffee' } },
+            ],
+            food: [
+              { id: 'all', label: { ku: 'هەموو', en: 'All' } },
+              { id: 'burger', label: { ku: 'بێرگەر', en: 'Burgers' } },
+              { id: 'pizza', label: { ku: 'پیتزا', en: 'Pizza' } },
+              { id: 'doner', label: { ku: 'دۆنەر', en: 'Doner' } },
+              { id: 'calzone', label: { ku: 'کالزۆنا', en: 'Calzone' } },
+              { id: 'sides', label: { ku: 'خواردنە لاوەکییەکان', en: 'Sides' } },
+            ]
+          };
+
+          const menuItems = [
+            // --- HOOKAH ITEMS ---
+            { cat: 'hookah', sub: null, img: images.head_change, price: 4000, name: { ku: 'گۆڕینی فنجان', en: 'Head Change' }, desc: { ku: '', en: '' } },
+            { cat: 'hookah', sub: null, img: images.gum, price: 6000, name: { ku: 'بنیشت', en: 'Gum' }, desc: { ku: '', en: '' } },
+            { cat: 'hookah', sub: null, img: images.castro, price: 6000, name: { ku: 'کاسترۆ', en: 'Castro' }, desc: { ku: '', en: '' } },
+            { cat: 'hookah', sub: null, img: images.royal_hookah, price: 6000, name: { ku: 'ئینگلیزی', en: 'English' }, desc: { ku: '', en: '' } },
+            { cat: 'hookah', sub: null, img: images.baghdadi, price: 6000, name: { ku: 'بەغدادی', en: 'Baghdadi' }, desc: { ku: '', en: '' } },
+            { cat: 'hookah', sub: null, img: images.lemon, price: 6000, name: { ku: 'لیمۆ', en: 'Lemon' }, desc: { ku: '', en: '' } },
+            { cat: 'hookah', sub: null, img: images.two_apples, price: 6000, name: { ku: 'دوو سێو', en: 'Two Apples' }, desc: { ku: '', en: '' } },
+            { cat: 'hookah', sub: null, img: images.ice_cream, price: 6000, name: { ku: 'ئایس کرێم', en: 'Ice Cream' }, desc: { ku: '', en: '' } },
+            { cat: 'hookah', sub: null, img: images.deran_1, price: 6000, name: { ku: 'دێران١', en: 'Deran 1' }, desc: { ku: '', en: '' } },
+            { cat: 'hookah', sub: null, img: images.deran_2, price: 6000, name: { ku: 'دێران٢', en: 'Deran 2' }, desc: { ku: '', en: '' } },
+            { cat: 'hookah', sub: null, img: images.deran_3, price: 6000, name: { ku: 'دێران٣', en: 'Deran 3' }, desc: { ku: '', en: '' } },
+            { cat: 'hookah', sub: null, img: images.deran_vip, price: 6000, name: { ku: 'دێرانvip', en: 'Deran VIP' }, desc: { ku: '', en: '' } },
+            { cat: 'hookah', sub: null, img: images.gum_melon, price: 6000, name: { ku: 'بنیشت گندۆرە', en: 'Gum & Melon' }, desc: { ku: '', en: '' } },
+            { cat: 'hookah', sub: null, img: images.fresh_shaddock, price: 10000, name: { ku: 'سندی فرێش', en: 'Fresh Shaddock' }, desc: { ku: 'Pomelo', en: 'Pomelo' } },
+            { cat: 'hookah', sub: null, img: images.fresh_pineapple, price: 15000, name: { ku: 'ئەناناس فرێش', en: 'Fresh Pineapple' }, desc: { ku: '', en: '' } },
+
+            // --- COLD DRINKS (33 Items) ---
+            
+            // Energy
+            { cat: 'cold_drinks', sub: 'energy', img: images.freeze, price: 1500, name: { ku: 'فریز', en: 'Freeze' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'energy', img: images.freeze_mexican, price: 2500, name: { ku: 'فریز مەکسیکی', en: 'Freeze Mexican' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'energy', img: images.jaguar, price: 1500, name: { ku: 'جاگوار', en: 'Jaguar' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'energy', img: images.jaguar_mexican, price: 2500, name: { ku: 'جاگوار مەکسیکی', en: 'Jaguar Mexican' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'energy', img: images.red_strong, price: 1500, name: { ku: 'رێد سترۆنگ', en: 'Red Strong' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'energy', img: images.red_mexican, price: 2000, name: { ku: 'رێد مەکسیکی', en: 'Red Mexican' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'energy', img: images.redbull, price: 3000, name: { ku: 'رێدبۆڵ', en: 'Red Bull' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'energy', img: images.redbull_pomegranate, price: 5000, name: { ku: 'رێدبۆڵ هەنار', en: 'Red Bull Pomegranate' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'energy', img: images.smart, price: 1500, name: { ku: 'سمارت', en: 'Smart' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'energy', img: images.smart_mexican, price: 2500, name: { ku: 'سمارت مەکسیکی', en: 'Smart Mexican' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'energy', img: images.tiger, price: 1500, name: { ku: 'تایگەر', en: 'Tiger' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'energy', img: images.tiger_mexican, price: 2500, name: { ku: 'تایگەر مەکسیکی', en: 'Tiger Mexican' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'energy', img: images.tiger_pomegranate, price: 3500, name: { ku: 'تایگەر هەنار', en: 'Tiger Pomegranate' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'energy', img: images.white_mexican, price: 2500, name: { ku: 'وایت مەکسیکی', en: 'White Mexican' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'energy', img: images.white_tiger, price: 1500, name: { ku: 'وایت تایگەر', en: 'White Tiger' }, desc: { ku: '', en: '' } },
+
+            // Juice & Milk
+            { cat: 'cold_drinks', sub: 'juice', img: images.melon_juice, price: 2000, name: { ku: 'گندۆرە', en: 'Melon Juice' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'juice', img: images.strawberry_milk, price: 2000, name: { ku: 'شیر و فراولە', en: 'Strawberry Milk' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'juice', img: images.banana_milk, price: 2000, name: { ku: 'شیرمۆز', en: 'Banana Milk' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'juice', img: images.orange_juice, price: 2500, name: { ku: 'پرتەقاڵ', en: 'Orange Juice' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'juice', img: images.lemon_juice, price: 3000, name: { ku: 'لیمۆ', en: 'Lemon Juice' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'juice', img: images.banana_milk_nutella, price: 3000, name: { ku: 'شیرمۆز نۆتێلا', en: 'Banana Milk Nutella' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'juice', img: images.strawberry, price: 4000, name: { ku: 'فراولە', en: 'Strawberry' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'juice', img: images.cocktail, price: 4000, name: { ku: 'کۆکتێل', en: 'Cocktail' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'juice', img: images.family_cocktail, price: 18000, name: { ku: 'کۆکتێل خێزانی', en: 'Family Cocktail' }, desc: { ku: '', en: '' } },
+
+            // Mojito
+            { cat: 'cold_drinks', sub: 'mojito', img: images.blueberry_mojito, price: 4000, name: { ku: 'مۆهیتۆ بلوبێری', en: 'Blueberry Mojito' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'mojito', img: images.plain_mojito, price: 3000, name: { ku: 'مۆهیتۆ سادە', en: 'Plain Mojito' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'mojito', img: images.pineapple_mojito, price: 4000, name: { ku: 'مۆهیتۆ ئەنەناس', en: 'Pineapple Mojito' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'mojito', img: images.strawberry_mojito, price: 4000, name: { ku: 'مۆهیتۆ فراولە', en: 'Strawberry Mojito' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'mojito', img: images.pomegranate_mojito, price: 4000, name: { ku: 'مۆهیتۆ هەنار', en: 'Pomegranate Mojito' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'mojito', img: images.deran_mojito, price: 3000, name: { ku: 'مۆهیتۆ دێران', en: 'Deran Mojito' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'mojito', img: images.orange_mojito, price: 4000, name: { ku: 'مۆهیتۆ پرتەقاڵ', en: 'Orange Mojito' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'mojito', img: images.apple_mojito, price: 4000, name: { ku: 'مۆهیتۆی سێو', en: 'Apple Mojito' }, desc: { ku: '', en: '' } },
+
+            // Soda
+            { cat: 'cold_drinks', sub: 'soda', img: images.cola, price: 1000, name: { ku: 'کۆلا', en: 'Cola' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'soda', img: images.ice_tea, price: 1000, name: { ku: 'ئایس کوول', en: 'Ice Cool / Ice Tea' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'soda', img: images.gazoz, price: 1000, name: { ku: 'گازۆز', en: 'Gazoz' }, desc: { ku: '', en: '' } },
+            { cat: 'cold_drinks', sub: 'soda', img: images.soda, price: 1000, name: { ku: 'سۆدە', en: 'Soda' }, desc: { ku: '', en: '' } },
+
+
+            // --- COFFEE : Hot ---
+            { cat: 'coffee', sub: 'hot', img: images.milk, price: 1000, name: { ku: 'شیر', en: 'Milk' }, desc: { ku: '', en: '' } },
+            { cat: 'coffee', sub: 'hot', img: images.nescafe, price: 1000, name: { ku: 'نسکافە', en: 'Nescafe' }, desc: { ku: '', en: '' } },
+            { cat: 'coffee', sub: 'hot', img: images.cappuccino, price: 1000, name: { ku: 'کاپوچینۆ', en: 'Cappuccino' }, desc: { ku: '', en: '' } },
+            { cat: 'coffee', sub: 'hot', img: images.hot_chocolate, price: 1000, name: { ku: 'شۆکۆلاتە', en: 'Hot Chocolate' }, desc: { ku: '', en: '' } },
+            { cat: 'coffee', sub: 'hot', img: images.terebinth_coffee, price: 2000, name: { ku: 'قاوە قەزوان', en: 'Terebinth Coffee' }, desc: { ku: '', en: '' } },
+            { cat: 'coffee', sub: 'hot', img: images.turkish_coffee, price: 2000, name: { ku: 'قاوە تورکی', en: 'Turkish Coffee' }, desc: { ku: '', en: '' } },
+            { cat: 'coffee', sub: 'hot', img: images.turkish_coffee, price: 2000, name: { ku: 'قاوەی عەرەبی', en: 'Arabic Coffee' }, desc: { ku: '', en: '' } },
+            { cat: 'coffee', sub: 'hot', img: images.espresso, price: 2000, name: { ku: 'ئیسپرێسۆ', en: 'Espresso' }, desc: { ku: '', en: '' } },
+            { cat: 'coffee', sub: 'hot', img: images.americano, price: 2000, name: { ku: 'ئەمەریکانۆ', en: 'Americano' }, desc: { ku: '', en: '' } },
+            { cat: 'coffee', sub: 'hot', img: images.milk_nutella, price: 2000, name: { ku: 'شیر نۆتێلا', en: 'Milk Nutella' }, desc: { ku: '', en: '' } },
+            { cat: 'coffee', sub: 'hot', img: images.milk_honey, price: 2000, name: { ku: 'شیر هەنگوین', en: 'Milk & Honey' }, desc: { ku: '', en: '' } },
+            { cat: 'coffee', sub: 'hot', img: images.nescafe_milk, price: 2000, name: { ku: 'نسکافە شیر', en: 'Nescafe with Milk' }, desc: { ku: '', en: '' } },
+                        
+            // --- COFFEE : Cold ---
+            { cat: 'coffee', sub: 'cold', img: images.ice_latte, price: 2500, name: { ku: 'ئایس لاتێ', en: 'Ice Latte' }, desc: { ku: '', en: '' } },
+            { cat: 'coffee', sub: 'cold', img: images.spanish_latte, price: 3000, name: { ku: 'سپانیش لاتێ', en: 'Spanish Latte' }, desc: { ku: '', en: '' } },
+            { cat: 'coffee', sub: 'cold', img: images.latte, price: 3000, name: { ku: 'لاتێ', en: 'Latte' }, desc: { ku: '', en: '' } },
+
+            // --- SWEETS ---
+            { cat: 'sweets', sub: null, img: images.trilece, price: 2000, name: { ku: 'ترالیچە', en: 'Trilece' }, desc: { ku: '', en: '' } },
+            { cat: 'sweets', sub: null, img: images.mahalabi, price: 2000, name: { ku: 'محلەبی', en: 'Mahalabi' }, desc: { ku: '', en: '' } },
+            { cat: 'sweets', sub: null, img: images.waffle_stick, price: 2000, name: { ku: 'وافل ستیک', en: 'Waffle Stick' }, desc: { ku: '', en: '' } },
+            { cat: 'sweets', sub: null, img: images.pancake, price: 3000, name: { ku: 'پان کێک', en: 'Pancake' }, desc: { ku: '', en: '' } },
+            { cat: 'sweets', sub: null, img: images.burger_pancake, price: 4000, name: { ku: 'بێرگەر پانکێک', en: 'Burger Pancake' }, desc: { ku: '', en: '' } },
+            { cat: 'sweets', sub: null, img: images.plain_crepe, price: 3000, name: { ku: 'کرێپ سادە', en: 'Plain Crepe' }, desc: { ku: '', en: '' } },
+            { cat: 'sweets', sub: null, img: images.dragon_waffle, price: 4000, name: { ku: 'وافل VIP', en: 'Waffle VIP' }, desc: { ku: '', en: '' } },
+            { cat: 'sweets', sub: null, img: images.dragon_crepe, price: 5000, name: { ku: 'کرێپ VIP', en: 'Crepe VIP' }, desc: { ku: '', en: '' } },
+            { cat: 'sweets', sub: null, img: images.crepe_roll, price: 5000, name: { ku: 'کرێپ رۆڵ', en: 'Crepe Roll' }, desc: { ku: '', en: '' } },
+            { cat: 'sweets', sub: null, img: images.delamun, price: 5000, name: { ku: 'دێلامون', en: 'Delamun' }, desc: { ku: '', en: '' } },
+            { cat: 'sweets', sub: null, img: images.double_crepe, price: 7000, name: { ku: 'کرێپ دەبڵ', en: 'Double Crepe' }, desc: { ku: '', en: '' } },
+            { cat: 'sweets', sub: null, img: images.lotus_cake, price: 3000, name: { ku: 'لۆتۆس کێک', en: 'Lotus Cake' }, desc: { ku: '', en: '' } },
+            { cat: 'sweets', sub: null, img: images.oreo_cake, price: 3000, name: { ku: 'ئۆریۆ کێک', en: 'Oreo Cake' }, desc: { ku: '', en: '' } },
+            
+            // Fruit Items
+            { cat: 'fruit', sub: null, img: images.small_fruit_plate, price: 4000, name: { ku: 'قاپ میوە بچووک', en: 'Small Fruit Plate' }, desc: { ku: '', en: '' } },
+            { cat: 'fruit', sub: null, img: images.large_fruit_plate, price: 6000, name: { ku: 'قاپ میوە گەورە', en: 'Large Fruit Plate' }, desc: { ku: '', en: '' } },
+            { cat: 'fruit', sub: null, img: images.family_fruit_plate, price: 12000, name: { ku: 'قاپ میوە خێزانی', en: 'Family Fruit Plate' }, desc: { ku: '', en: '' } },
+            
+            // --- FOOD (UPDATED) ---
+            
+            // Doner (دۆنەر)
+            { cat: 'food', sub: 'doner', img: images.chicken_doner, price: 2500, name: { ku: 'دۆنەری مریشک', en: 'Chicken Doner' }, desc: { ku: '', en: '' } },
+            { cat: 'food', sub: 'doner', img: images.meat_doner, price: 3500, name: { ku: 'دۆنەری گۆشت', en: 'Meat Doner' }, desc: { ku: '', en: '' } },
+            { cat: 'food', sub: 'doner', img: images.mixed_doner, price: 3000, name: { ku: 'دۆنەری تێکەڵ (مەشەکەل)', en: 'Mixed Doner' }, desc: { ku: '', en: '' } },
+            { cat: 'food', sub: 'doner', img: images.chicken_cheese_doner, price: 3000, name: { ku: 'دۆنەری مریشک و پەنیر', en: 'Chicken & Cheese Doner' }, desc: { ku: '', en: '' } },
+            { cat: 'food', sub: 'doner', img: images.mixed_doner, price: 3500, name: { ku: 'دۆنەری تێکەڵ و پەنیر', en: 'Mixed & Cheese Doner' }, desc: { ku: '', en: '' } },
+            { cat: 'food', sub: 'doner', img: images.meat_cheese_doner, price: 4000, name: { ku: 'دۆنەری گۆشت و پەنیر', en: 'Meat & Cheese Doner' }, desc: { ku: '', en: '' } },
+
+            // Burger (هەمبەرگر)
+            { cat: 'food', sub: 'burger', img: images.chicken_burger, price: 3000, name: { ku: 'بێرگەری مریشک', en: 'Chicken Burger' }, desc: { ku: '', en: '' } },
+            { cat: 'food', sub: 'burger', img: images.chicken_cheese_burger, price: 3500, name: { ku: 'بێرگەری مریشک و پەنیر', en: 'Chicken & Cheese Burger' }, desc: { ku: '', en: '' } },
+            { cat: 'food', sub: 'burger', img: images.meat_burger, price: 3000, name: { ku: 'بێرگەری گۆشت', en: 'Meat Burger' }, desc: { ku: '', en: '' } },
+            { cat: 'food', sub: 'burger', img: images.meat_cheese_burger, price: 4000, name: { ku: 'بێرگەری گۆشت و پەنیر', en: 'Meat & Cheese Burger' }, desc: { ku: '', en: '' } },
+
+            // Pizza (پیتزا)
+            { cat: 'food', sub: 'pizza', img: images.pizza_generic, price: 3500, name: { ku: 'پیتزای بچوک', en: 'Small Pizza' }, desc: { ku: 'هەموو جۆرەکان (گۆشت، مریشک، مەشەکەل، خەزرەوات)', en: 'All types (Meat, Chicken, Mixed, Vegetable)' } },
+            { cat: 'food', sub: 'pizza', img: images.pizza_generic, price: 6000, name: { ku: 'پیتزای وەسەت (مامناوەند)', en: 'Medium Pizza' }, desc: { ku: 'هەموو جۆرەکان (گۆشت، مریشک، مەشەکەل، خەزرەوات)', en: 'All types (Meat, Chicken, Mixed, Vegetable)' } },
+            { cat: 'food', sub: 'pizza', img: images.pizza_generic, price: 7000, name: { ku: 'پیتزای گەورە', en: 'Large Pizza' }, desc: { ku: 'هەموو جۆرەکان (گۆشت، مریشک، مەشەکەل، خەزرەوات)', en: 'All types (Meat, Chicken, Mixed, Vegetable)' } },
+            { cat: 'food', sub: 'pizza', img: images.pizza_generic, price: 11000, name: { ku: 'پیتزای خێزانی', en: 'Family Pizza' }, desc: { ku: 'هەموو جۆرەکان (گۆشت، مریشک، مەشەکەل، خەزرەوات)', en: 'All types (Meat, Chicken, Mixed, Vegetable)' } },
+
+            // Calzone (کالزۆنا)
+            { cat: 'food', sub: 'calzone', img: images.calzone, price: 7000, name: { ku: 'کالزۆنای وەسەت (مامناوەند)', en: 'Medium Calzone' }, desc: { ku: 'هەموو جۆرەکان (گۆشت، مریشک، مەشەکەل، خەزرەوات)', en: 'All types (Meat, Chicken, Mixed, Vegetable)' } },
+            { cat: 'food', sub: 'calzone', img: images.calzone, price: 8000, name: { ku: 'کالزۆنای گەورە', en: 'Large Calzone' }, desc: { ku: 'هەموو جۆرەکان (گۆشت، مریشک، مەشەکەل، خەزرەوات)', en: 'All types (Meat, Chicken, Mixed, Vegetable)' } },
+            { cat: 'food', sub: 'calzone', img: images.calzone, price: 12000, name: { ku: 'کالزۆنای خێزانی', en: 'Family Calzone' }, desc: { ku: 'هەموو جۆرەکان (گۆشت، مریشک، مەشەکەل، خەزرەوات)', en: 'All types (Meat, Chicken, Mixed, Vegetable)' } },
+
+            // Sides (خواردنە لاوەکییەکان)
+            { cat: 'food', sub: 'sides', img: images.fries, price: 3500, name: { ku: 'فینگەر', en: 'Fries' }, desc: { ku: '', en: '' } },
+            { cat: 'food', sub: 'sides', img: images.appetizers, price: 3500, name: { ku: 'موقەبیلات', en: 'Appetizers' }, desc: { ku: '', en: '' } },
+          ];
+
+          const filteredItems = menuItems.filter(item => {
+            if (searchQuery.trim()) {
+              const q = searchQuery.toLowerCase();
+              return (
+                item.name.ku.toLowerCase().includes(q) ||
+                item.name.en.toLowerCase().includes(q)
+              );
+            }
+            if (item.cat !== activeCategory) return false;
+            if (activeSubCategory !== 'all' && item.sub && item.sub !== activeSubCategory) return false;
+            return true;
+          });
+
+          const handleCategoryChange = (catId) => {
+            setActiveCategory(catId);
+            setActiveSubCategory('all');
+            setSearchQuery(''); 
+          };
+
+          const handleLanguageSelect = (selectedLang) => {
+            setLang(selectedLang);
+            setView('menu');
+          };
+
+          const bgClass = "bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-red-950 via-neutral-950 to-green-950 text-neutral-100"; 
+          
+          // --- Language Data ---
+          const languages = [
+            { 
+                code: 'ku', 
+                label: 'کوردی', 
+                sub: 'Kurdish', 
+                flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Flag_of_Kurdistan.svg/1280px-Flag_of_Kurdistan.svg.png' 
+            },
+            { 
+                code: 'en', 
+                label: 'English', 
+                sub: 'English', 
+                flag: 'https://upload.wikimedia.org/wikipedia/en/thumb/a/ae/Flag_of_the_United_Kingdom.svg/800px-Flag_of_the_United_Kingdom.svg.png' 
+            }
+          ];
+
+          const activeFlag = languages.find(l => l.code === lang)?.flag;
+
+          const ContactButton = ({ icon: Icon, label, onClick }) => (
+            <button 
+              onClick={onClick} 
+              className="flex flex-col items-center justify-center gap-2 group w-full py-4 rounded-xl bg-black/40 border border-white/5 hover:border-amber-500/40 hover:bg-amber-900/10 transition-all duration-300 backdrop-blur-sm"
+            >
+              <Icon size={20} strokeWidth={1.5} className="text-neutral-400 group-hover:text-amber-500 transition-colors duration-300" />
+              <span className="text-[9px] font-medium tracking-widest uppercase text-neutral-500 group-hover:text-amber-400 transition-colors">{label}</span>
+            </button>
+          );
+
+          // Powered By Component
+          const PoweredBy = () => (
+            <div className="fixed bottom-0 left-0 right-0 bg-neutral-950 border-t border-white/5 py-2 z-40 flex justify-center items-center shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
+                <p className={`text-[10px] text-neutral-500 uppercase font-sans flex items-center justify-center gap-1 ${lang === 'en' ? 'tracking-[0.2em]' : ''}`}>
+                    <span>{uiText.poweredBy[lang]}</span>
+                    <a href="https://masmenu.masmenu.workers.dev/" target="_blank" rel="noopener noreferrer" className="text-amber-500 font-bold tracking-widest hover:text-amber-400 transition-colors">Mas Menu</a>
+                </p>
+            </div>
+          );
+
+          if (view === 'welcome') {
+            return (
+              <div className={`min-h-screen ${bgClass} flex flex-col items-center justify-between p-8 pb-16 ${fontClass} relative overflow-hidden`}>
+                <div className="absolute inset-0 z-0 bg-black">
+                     <video 
+                      autoPlay 
+                      loop 
+                      muted 
+                      playsInline 
+                      className="bg-video absolute inset-0 w-full h-full object-cover z-0"
+                      onError={(e) => { 
+                        e.target.style.display = 'none'; 
+                        document.body.classList.add('bg-video-fallback');
+                      }}
+                    >
+                      <source src="assets/video/background.mp4" type="video/mp4" />
+                    </video>
+                    {/* Minimal overlay for text readability while keeping video clear */}
+                    <div className="absolute inset-0 bg-black/10 z-0"></div>
+                </div>
+                
+                <div className={`flex-1 flex flex-col justify-center w-full max-w-md z-10 transition-all duration-1000 transform ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+                  
+                  <div className="text-center mb-12 relative">
+                      <div className="w-48 h-48 mx-auto rounded-full flex items-center justify-center relative z-10 mb-8 animate-in fade-in zoom-in duration-1000 overflow-hidden shadow-[0_0_40px_rgba(245,158,11,0.3)] border-2 border-amber-500/20 bg-black/50 backdrop-blur-sm">
+                        <img 
+                            src="https://scared-moccasin-vmjwkvdcjg.edgeone.app/cafe-logo.png" 
+                            alt="Dêran Logo" 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                                e.target.onerror = null; 
+                                e.target.src = getPlaceholder('Dêran');
+                            }}
+                        />
+                      </div>
+                      <h1 className="text-4xl font-bold text-white mb-2 font-serif tracking-widest drop-shadow-lg">DÊRAN</h1>
+                      <p className="text-amber-500 text-sm tracking-[0.3em] uppercase drop-shadow-md">Cafe & Hookah Lounge</p>
+                  </div>
+
+                  <div className="grid gap-4">
+                      {languages.map((l, i) => (
+                        <button 
+                          key={l.code}
+                          onClick={() => handleLanguageSelect(l.code)}
+                          style={{ transitionDelay: `${i * 150}ms` }}
+                          className="group relative overflow-hidden w-full h-20 rounded-xl border border-white/10 hover:border-amber-500/50 bg-neutral-900/60 hover:bg-neutral-900/90 backdrop-blur-md transition-all duration-300 flex items-center justify-between px-6 shadow-lg hover:shadow-amber-900/20 active:scale-[0.98]"
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                          
+                          <div className="flex items-center gap-4 z-10">
+                            <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 shadow-md group-hover:border-amber-500/50 transition-colors">
+                                <img src={l.flag} alt={l.label} className="w-full h-full object-cover" />
+                            </div>
+                            <div className="flex flex-col items-start">
+                                <span className="text-xl font-bold text-white group-hover:text-amber-400 transition-colors duration-300 tracking-wide font-serif">{l.label}</span>
+                                <span className="text-[10px] text-neutral-400 uppercase tracking-widest group-hover:text-amber-500/80 transition-colors">{l.sub}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-neutral-500 group-hover:border-amber-500 group-hover:text-amber-500 transition-all duration-300 bg-white/5">
+                            <ChevronRight size={16} strokeWidth={2} />
+                          </div>
+                        </button>
+                      ))}
+                  </div>
+                </div>
+
+                <div className={`w-full max-w-md mt-12 grid grid-cols-3 gap-3 z-10 transition-all duration-1000 delay-500 transform ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+                  <ContactButton icon={Phone} label={uiText.call[lang]} onClick={() => window.open(`tel:${contactInfo.phone}`)} />
+                  <ContactButton icon={Instagram} label="Instagram" onClick={() => window.open(contactInfo.instagramUrl)} />
+                  <ContactButton icon={MapPin} label={uiText.location[lang]} onClick={() => window.open(contactInfo.locationUrl)} />
+                </div>
+                <PoweredBy />
+              </div>
+            );
+          }
+
+          return (
+            <div dir={dir} className={`min-h-screen ${bgClass} ${fontClass} relative`}>
+              <header className={`sticky top-0 z-40 bg-neutral-950/80 backdrop-blur-2xl border-b border-white/5 shadow-2xl transition-all duration-500 ${isLoaded ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
+                <div className="max-w-md mx-auto px-4 pt-4 pb-2">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <button onClick={() => setShowInfoModal(true)} className="w-11 h-11 rounded-full bg-neutral-900 border border-white/10 flex items-center justify-center text-amber-500 active:scale-95 transition-all hover:border-amber-500/50 hover:bg-neutral-800 hover:shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                          <Info size={20} />
+                      </button>
+                      <div>
+                        <h2 className="font-bold text-2xl leading-none text-white tracking-wide font-serif">DÊRAN</h2>
+                        <span className="text-[9px] text-amber-500 uppercase tracking-[0.2em] font-medium">Cafe</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => setShowLangModal(true)} className="h-11 pl-2 pr-4 rounded-full bg-neutral-900 border border-white/10 flex items-center gap-2 text-neutral-400 hover:text-white hover:border-amber-500/30 transition-all active:scale-95 group">
+                        <div className="w-6 h-6 rounded-full overflow-hidden border border-white/20 relative">
+                            <img src={activeFlag} alt={lang} className="w-full h-full object-cover" />
+                        </div>
+                        <span className="text-xs font-bold uppercase tracking-wider group-hover:text-amber-400 transition-colors">{lang}</span>
+                      </button>
+                      <button onClick={() => setView('welcome')} className="w-11 h-11 rounded-full bg-neutral-900 border border-white/10 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors active:scale-95">
+                        <ArrowLeft size={20} className={dir === 'rtl' ? 'rotate-180' : ''} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex overflow-x-auto gap-4 pb-2 no-scrollbar scroll-smooth pl-1">
+                    {categories.map((cat, i) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => handleCategoryChange(cat.id)}
+                        className={`flex-shrink-0 flex flex-col items-center gap-2 group transition-all duration-500`}
+                        style={{ transitionDelay: `${i * 50}ms` }}
+                      >
+                        <div className={`w-16 h-16 rounded-[1.2rem] overflow-hidden relative transition-all duration-300 ${activeCategory === cat.id && !searchQuery ? 'ring-2 ring-amber-500/80 shadow-[0_0_20px_rgba(245,158,11,0.4)] scale-105' : 'grayscale opacity-60 scale-95 hover:opacity-100 hover:scale-100'}`}>
+                            <img 
+                                src={cat.img} 
+                                alt={cat.label.en} 
+                                className="w-full h-full object-cover bg-neutral-800"
+                                onError={(e) => {
+                                    e.target.onerror = null; 
+                                    e.target.src = getPlaceholder(cat.label.en);
+                                }}
+                            />
+                        </div>
+                        <span className={`text-[10px] font-bold uppercase tracking-wider transition-colors duration-300 ${activeCategory === cat.id && !searchQuery ? 'text-amber-500' : 'text-neutral-500'}`}>
+                          {cat.label[lang]}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {subCategories[activeCategory] && !searchQuery && (
+                  <div className="bg-neutral-950/80 border-t border-white/5 backdrop-blur-md">
+                      <div className="flex overflow-x-auto gap-2 px-4 py-3 no-scrollbar max-w-md mx-auto">
+                        {subCategories[activeCategory].map((sub) => (
+                          <button
+                            key={sub.id}
+                            onClick={() => setActiveSubCategory(sub.id)}
+                            className={`px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${
+                              activeSubCategory === sub.id
+                                ? 'bg-amber-500 text-black border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
+                                : 'bg-neutral-900 border-neutral-800 text-neutral-500 hover:text-neutral-300 hover:border-neutral-700'
+                            }`}
+                          >
+                            {sub.label[lang]}
+                          </button>
+                        ))}
+                      </div>
+                  </div>
+                )}
+              </header>
+
+              <main className="max-w-md mx-auto px-4 py-6 pb-32">
+                <div className="mb-8 relative z-0">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 rounded-2xl blur opacity-30 group-focus-within:opacity-100 transition duration-500"></div>
+                  <div className="relative group">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={uiText.search[lang]}
+                      className={`w-full bg-[#111] border border-white/10 rounded-xl py-4 ${dir === 'rtl' ? 'pr-12 pl-12' : 'pl-12 pr-12'} text-white placeholder:text-neutral-600 focus:outline-none focus:border-amber-500/50 transition-all shadow-inner`}
+                    />
+                    <div className={`absolute top-1/2 -translate-y-1/2 ${dir === 'rtl' ? 'right-4' : 'left-4'}`}>
+                      <Search className="text-neutral-500 group-focus-within:text-amber-500 transition-colors" size={20} />
+                    </div>
+                    {searchQuery && (
+                      <button onClick={() => setSearchQuery('')} className={`absolute top-1/2 -translate-y-1/2 ${dir === 'rtl' ? 'left-3' : 'right-3'} p-1.5 hover:bg-white/10 rounded-full transition-colors text-neutral-500 hover:text-white`}>
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-end justify-between px-1 mb-6 border-b border-white/5 pb-2">
+                  <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                    {!searchQuery && <div className="w-1 h-6 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)]"></div>}
+                    {searchQuery 
+                      ? uiText.searchResults[lang]
+                      : categories.find(c => c.id === activeCategory)?.label[lang]
+                    }
+                  </h3>
+                  <span className="text-[10px] text-amber-500/60 font-mono bg-amber-500/5 px-2 py-1 rounded-md border border-amber-500/10">
+                    {filteredItems.length} Items
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {filteredItems.length > 0 ? (
+                    filteredItems.map((item, index) => (
+                      <div 
+                        key={index} 
+                        className={`group relative bg-neutral-900 border border-white/5 rounded-[1.5rem] overflow-hidden shadow-lg transition-all duration-500 hover:shadow-[0_10px_30px_rgba(0,0,0,0.5)] hover:border-amber-500/30 hover:-translate-y-1`}
+                      >
+                        <div className="relative aspect-[4/5] overflow-hidden bg-neutral-800">
+                            <img 
+                                src={item.img} 
+                                alt={item.name.en} 
+                                className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110" 
+                                onError={(e) => {
+                                    e.target.onerror = null; 
+                                    e.target.src = getPlaceholder(item.name.en);
+                                }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-90"></div>
+                            <div className="absolute top-3 right-3 z-10">
+                               <div className="bg-neutral-950/80 backdrop-blur-md border border-amber-500/40 px-3 py-1.5 rounded-xl flex items-baseline gap-1 shadow-lg shadow-black/50">
+                                  <span className="text-amber-400 font-bold text-sm tracking-wide drop-shadow-md">{item.price.toLocaleString()}</span>
+                                  <span className="text-[9px] text-amber-500/70 font-medium tracking-wider">{uiText.currency[lang]}</span>
+                               </div>
+                            </div>
+                            <div className="absolute bottom-0 left-0 right-0 p-4">
+                                <h4 className="font-bold text-lg text-white leading-tight mb-2 drop-shadow-md tracking-tight">{item.name[lang]}</h4>
+                                {item.desc[lang] && (
+                                    <p className="text-[11px] text-neutral-300/90 line-clamp-2 leading-relaxed font-light">{item.desc[lang]}</p>
+                                )}
+                            </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-2 py-24 flex flex-col items-center justify-center text-neutral-600 gap-4">
+                      <div className="w-16 h-16 rounded-full bg-neutral-900 flex items-center justify-center border border-white/5">
+                        <Search className="w-6 h-6 opacity-30" />
+                      </div>
+                      <p className="text-sm font-light tracking-wide">{searchQuery ? uiText.noResults[lang] : 'No items found'}</p>
+                    </div>
+                  )}
+                </div>
+              </main>
+
+              <PoweredBy />
+
+              {showInfoModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center px-4 animate-in fade-in duration-300">
+                  <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setShowInfoModal(false)}></div>
+                  <div className="bg-[#111] border border-white/10 w-full max-w-sm rounded-[2rem] p-8 relative z-10 shadow-2xl">
+                    <button onClick={() => setShowInfoModal(false)} className="absolute top-6 right-6 text-neutral-500 hover:text-white transition-colors">
+                      <X size={24} />
+                    </button>
+                    <div className="text-center space-y-8">
+                      <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto text-amber-500 border border-amber-500/20 shadow-[0_0_30px_rgba(245,158,11,0.1)]">
+                        <Info size={36} />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-2xl font-bold text-white">{uiText.welcome[lang]}</h3>
+                        <p className="text-neutral-500 text-sm tracking-wide">Open Daily: 10:00 AM - 2:00 AM</p>
+                      </div>
+                      <div className="space-y-4">
+                        {[
+                          { icon: Phone, label: uiText.call[lang], val: contactInfo.phone, link: `tel:${contactInfo.phone}` },
+                          { icon: MapPin, label: uiText.location[lang], val: contactInfo.location, link: contactInfo.locationUrl },
+                          { icon: Instagram, label: uiText.follow[lang], val: contactInfo.instagram, link: contactInfo.instagramUrl },
+                        ].map((item, i) => (
+                          <a key={i} href={item.link} target="_blank" rel="noreferrer" className="flex items-center gap-5 p-4 rounded-2xl bg-neutral-900 border border-white/5 hover:bg-neutral-800 hover:border-amber-500/20 transition-all group">
+                            <div className="w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center text-amber-500 group-hover:bg-amber-500 group-hover:text-black transition-colors">
+                              <item.icon size={18} />
+                            </div>
+                            <div className="flex-1 text-left">
+                              <div className="text-[10px] uppercase tracking-widest text-neutral-500 group-hover:text-amber-500/70 transition-colors">{item.label}</div>
+                              <div className="text-sm font-bold text-white mt-0.5">{item.val}</div>
+                            </div>
+                            <ExternalLink size={14} className="text-neutral-700 group-hover:text-amber-500 transition-colors" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {showLangModal && (
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:px-4 animate-in fade-in duration-300">
+                    <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setShowLangModal(false)}></div>
+                    <div className="bg-[#111] border-t sm:border border-white/10 w-full max-w-sm rounded-t-[2.5rem] sm:rounded-[2.5rem] p-8 relative z-10 shadow-2xl animate-in slide-in-from-bottom duration-300">
+                        <div className="w-12 h-1 bg-neutral-800 rounded-full mx-auto mb-8 sm:hidden"></div>
+                        <div className="text-center mb-8">
+                            <h3 className="text-2xl font-bold text-white tracking-tight">{uiText.selectLang[lang]}</h3>
+                        </div>
+                        <div className="space-y-3">
+                            {languages.map((l) => (
+                                <button
+                                    key={l.code}
+                                    onClick={() => {
+                                        handleLanguageSelect(l.code);
+                                        setShowLangModal(false);
+                                    }}
+                                    className={`w-full p-4 rounded-2xl flex items-center justify-between border transition-all duration-300 group ${
+                                        lang === l.code 
+                                        ? 'bg-amber-500 text-black border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.3)]' 
+                                        : 'bg-neutral-900 border-white/5 text-neutral-400 hover:bg-neutral-800 hover:border-white/10'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-10 h-10 rounded-full overflow-hidden border ${lang === l.code ? 'border-black/20' : 'border-white/10'}`}>
+                                            <img src={l.flag} alt={l.label} className="w-full h-full object-cover" />
+                                        </div>
+                                        <div className="flex flex-col items-start">
+                                            <span className="font-bold text-lg">{l.label}</span>
+                                            <span className={`text-[10px] uppercase tracking-wider ${lang === l.code ? 'text-black/60' : 'text-neutral-600'}`}>{l.sub}</span>
+                                        </div>
+                                    </div>
+                                    {lang === l.code && <div className="bg-black/20 p-1 rounded-full"><Check size={16} /></div>}
+                                </button>
+                            ))}
+                        </div>
+                        <button onClick={() => setShowLangModal(false)} className="mt-8 w-full py-4 rounded-2xl bg-neutral-900 border border-white/5 text-neutral-400 text-sm font-bold tracking-widest uppercase hover:bg-neutral-800 hover:text-white transition-colors">
+                            {uiText.close[lang]}
+                        </button>
+                    </div>
+                </div>
+              )}
+            </div>
+          );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<DeranMenu />);
+    </script>
+</body>
+</html>

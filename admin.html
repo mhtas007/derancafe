@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ئەدمین پەنێڵ - دێران</title>
+    
+    <!-- PWA / iOS Home Screen Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Dêran Admin">
+    <link rel="apple-touch-icon" href="https://scared-moccasin-vmjwkvdcjg.edgeone.app/cafe-logo.png">
+    <meta name="theme-color" content="#000000">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@18.2.0",
+          "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
+          "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+          "lucide-react": "https://esm.sh/lucide-react@0.344.0",
+          "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+          "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js",
+          "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
+          "firebase/storage": "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js"
+        }
+      }
+    </script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        @font-face {
+            font-family: 'Rudaw';
+            src: url('assets/fonts/rudaw.ttf') format('truetype'),
+                 url('assets/fonts/Rudaw.woff') format('woff'),
+                 url('https://cdn.fontcdn.ir/Font/Persian/Rudaw/Rudaw-Regular.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body { 
+            font-family: 'Rudaw', sans-serif; 
+            background-color: #050505; 
+            margin: 0; 
+            color: #fff;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .glass { background: rgba(23, 23, 23, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        input, select, textarea { background: #0a0a0a; border: 1px solid #262626; color: white; transition: all 0.2s ease; }
+        input:focus, select:focus, textarea:focus { border-color: #f59e0b; outline: none; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.1); }
+        .loader { border: 3px solid #333; border-radius: 50%; border-top: 3px solid #f59e0b; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useRef } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { initializeApp } from "firebase/app";
+        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc } from "firebase/firestore";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "firebase/auth";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+        import { LayoutDashboard, Coffee, Utensils, Settings, Plus, Search, Edit2, Trash2, Save, X, LogOut, Upload, Image as ImageIcon, Link2, MapPin, Phone, Instagram, CheckCircle2, Layers } from 'lucide-react';
+
+        // Firebase Setup
+        const firebaseConfig = {
+            apiKey: "AIzaSyBV0-natVswm0F4ZGGHs80JOq64v9zY8qU",
+            authDomain: "deran-menu.firebaseapp.com",
+            projectId: "deran-menu",
+            storageBucket: "deran-menu.firebasestorage.app",
+            messagingSenderId: "638862791426",
+            appId: "1:638862791426:web:5078579a90b3982a61281b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const storage = getStorage(app);
+
+        // Fallback categories if database is empty
+        const initialCategories = [
+            { id: 'hookah', label: { ku: 'نێرگەلە', en: 'Hookah' }, img: 'https://inadequate-scarlet-slkomtsmge.edgeone.app/baghdadi.png' },
+            { id: 'cold_drinks', label: { ku: 'خواردنەوە ساردەکان', en: 'Cold Drinks' }, img: 'https://burning-apricot-sb8mtowsz3.edgeone.app/category-image-copy-0.png' },
+            { id: 'coffee', label: { ku: 'قاوە و گەرم', en: 'Coffee' }, img: 'https://high-tan-h3opsxxajg.edgeone.app/category-image.png' },
+            { id: 'sweets', label: { ku: 'شیرینی', en: 'Sweets' }, img: 'https://legislative-yellow-5xkz9eny9h.edgeone.app/category-image.png' },
+            { id: 'fruit', label: { ku: 'میوە', en: 'Fruit' }, img: 'https://enthusiastic-white-lh44zrrnl9.edgeone.app/5e127b39-3270-4323-bc9a-ad6d2859a832.png' },
+            { id: 'food', label: { ku: 'خواردن', en: 'Food' }, img: 'https://intermediate-blush-qnxn1cri23.edgeone.app/mixed-burger.png' },
+        ];
+
+        // --- COMPONENTS ---
+
+        const LoginPage = () => {
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError('');
+                setLoading(true);
+                try {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } catch (err) {
+                    console.error(err);
+                    setError('ئیمەیڵ یان وشەی نهێنی هەڵەیە');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-black text-white flex items-center justify-center p-4 relative overflow-hidden">
+                    <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-amber-600/10 rounded-full blur-[150px]"></div>
+                    <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-amber-900/10 rounded-full blur-[150px]"></div>
+                    
+                    <div className="w-full max-w-md bg-neutral-900/40 backdrop-blur-2xl border border-white/5 p-8 rounded-[2.5rem] shadow-2xl z-10">
+                        <div className="text-center mb-10">
+                            <div className="w-24 h-24 mx-auto mb-6 rounded-full overflow-hidden border-2 border-amber-500/20 p-1 shadow-[0_0_30px_rgba(245,158,11,0.1)]">
+                                <img src="https://scared-moccasin-vmjwkvdcjg.edgeone.app/cafe-logo.png" className="w-full h-full object-cover rounded-full bg-black" alt="Logo" />
+                            </div>
+                            <h1 className="text-4xl font-bold font-serif tracking-widest text-white mb-2" style={{fontFamily: 'serif'}}>DÊRAN</h1>
+                            <p className="text-amber-500 tracking-[0.3em] uppercase text-[10px] font-bold">بەڕێوەبردنی سیستەم</p>
+                        </div>
+
+                        {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl mb-6 text-sm text-center font-bold">{error}</div>}
+
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <input type="email" placeholder="ئیمەیڵ" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-black/40 border border-white/5 px-5 py-4 rounded-xl focus:border-amber-500 transition-colors placeholder:text-neutral-600 text-left" dir="ltr" />
+                            </div>
+                            <div>
+                                <input type="password" placeholder="وشەی نهێنی" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-black/40 border border-white/5 px-5 py-4 rounded-xl focus:border-amber-500 transition-colors placeholder:text-neutral-600 text-left" dir="ltr" />
+                            </div>
+                            <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold py-4 rounded-xl transition-all duration-300 disabled:opacity-50 flex justify-center items-center h-[56px] shadow-lg shadow-amber-500/20 mt-4 text-lg">
+                                {loading ? <div className="loader border-black border-t-transparent"></div> : 'چوونە ژوورەوە'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        const SettingsView = () => {
+            const [settings, setSettings] = useState({
+                cafeName: 'DÊRAN',
+                phone: '+964 750 000 0000',
+                instagram: 'https://instagram.com/deran_cafe',
+                location: 'https://maps.google.com/...'
+            });
+            const [loading, setLoading] = useState(true);
+            const [saving, setSaving] = useState(false);
+            const [msg, setMsg] = useState('');
+
+            useEffect(() => {
+                const fetchSettings = async () => {
+                    try {
+                        const docRef = doc(db, 'settings', 'global');
+                        const docSnap = await getDoc(docRef);
+                        if (docSnap.exists()) {
+                            setSettings(docSnap.data());
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
+                    setLoading(false);
+                };
+                fetchSettings();
+            }, []);
+
+            const handleSave = async (e) => {
+                e.preventDefault();
+                setSaving(true);
+                try {
+                    await setDoc(doc(db, 'settings', 'global'), settings);
+                    setMsg('ڕێکخستنەکان بە سەرکەوتوویی پاشەکەوت کران!');
+                    setTimeout(() => setMsg(''), 4000);
+                } catch (err) {
+                    setMsg('هەڵەیەک ڕوویدا لە پاشەکەوتکردن');
+                }
+                setSaving(false);
+            };
+
+            if (loading) return <div className="flex justify-center py-20"><div className="loader w-12 h-12"></div></div>;
+
+            return (
+                <div className="max-w-2xl mx-auto space-y-6">
+                    <div className="mb-8">
+                        <h2 className="text-3xl font-bold text-white mb-2">ڕێکخستنە گشتییەکان</h2>
+                        <p className="text-neutral-400 text-sm">لێرەوە زانیارییە گشتییەکانی کافێکەت بگۆڕە کە لە مێنیوەکەدا دەردەکەون.</p>
+                    </div>
+
+                    {msg && (
+                        <div className="bg-green-500/10 border border-green-500/30 text-green-400 px-6 py-4 rounded-xl flex items-center gap-3">
+                            <CheckCircle2 size={20} />
+                            <span className="font-bold">{msg}</span>
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSave} className="bg-neutral-900/50 border border-white/5 rounded-2xl p-6 space-y-6 backdrop-blur-sm shadow-xl">
+                        
+                        <div>
+                            <label className="block text-sm font-bold text-neutral-400 mb-2">ناوی کافێ</label>
+                            <input type="text" value={settings.cafeName} onChange={(e)=>setSettings({...settings, cafeName: e.target.value})} className="w-full px-4 py-3 rounded-xl focus:border-amber-500 transition-colors" required />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-neutral-400 mb-2 flex items-center gap-2"><Phone size={16}/> ژمارە تەلەفۆن</label>
+                            <input type="text" value={settings.phone} onChange={(e)=>setSettings({...settings, phone: e.target.value})} className="w-full px-4 py-3 rounded-xl focus:border-amber-500 transition-colors text-left" dir="ltr" required />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-neutral-400 mb-2 flex items-center gap-2"><Instagram size={16}/> لینکی ئینستاگرام</label>
+                            <input type="url" value={settings.instagram} onChange={(e)=>setSettings({...settings, instagram: e.target.value})} className="w-full px-4 py-3 rounded-xl focus:border-amber-500 transition-colors text-left" dir="ltr" required />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-neutral-400 mb-2 flex items-center gap-2"><MapPin size={16}/> لینکی لۆکەیشن نەخشە (Google Maps)</label>
+                            <input type="url" value={settings.location} onChange={(e)=>setSettings({...settings, location: e.target.value})} className="w-full px-4 py-3 rounded-xl focus:border-amber-500 transition-colors text-left" dir="ltr" required />
+                        </div>
+
+                        <div className="pt-4 border-t border-white/5">
+                            <button type="submit" disabled={saving} className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors">
+                                {saving ? <div className="loader border-black border-t-transparent"></div> : <><Save size={20} /> پاشەکەوتکردن</>}
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            );
+        };
+
+        const App = () => {
+
+
+            const [user, setUser] = useState(null);
+            const [isAdmin, setIsAdmin] = useState(false);
+            const [authLoading, setAuthLoading] = useState(true);
+
+            const [items, setItems] = useState([]);
+            const [categories, setCategories] = useState([]);
+            
+            const [loading, setLoading] = useState(true);
+            const [isEditing, setIsEditing] = useState(false);
+            const [isEditingCategory, setIsEditingCategory] = useState(false);
+            
+            const [currentItem, setCurrentItem] = useState(null);
+            const [currentCategory, setCurrentCategory] = useState(null);
+            
+            const [searchTerm, setSearchTerm] = useState('');
+            const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
+            const [activeView, setActiveView] = useState('dashboard'); // 'dashboard', 'categories', 'settings'
+            const [uploadingImage, setUploadingImage] = useState(false);
+            const [syncingCategories, setSyncingCategories] = useState(false);
+            const fileInputRef = useRef(null);
+            const catFileInputRef = useRef(null);
+
+            useEffect(() => {
+                const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+                    setUser(currentUser);
+                    if (currentUser) {
+                        try {
+                            const adminDoc = await getDoc(doc(db, "admins", currentUser.uid));
+                            if (adminDoc.exists()) {
+                                setIsAdmin(true);
+                                fetchData();
+                                fetchCategories();
+                            } else {
+                                const adminSnap = await getDocs(collection(db, "admins"));
+                                if(adminSnap.empty) {
+                                    await setDoc(doc(db, "admins", currentUser.uid), { email: currentUser.email });
+                                    setIsAdmin(true);
+                                    fetchData();
+                                    fetchCategories();
+                                } else {
+                                    setIsAdmin(false);
+                                }
+                            }
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+                    setAuthLoading(false);
+                });
+                return unsubscribe;
+            }, []);
+
+            const fetchData = async () => {
+                setLoading(true);
+                try {
+                    const querySnapshot = await getDocs(collection(db, "menuItems"));
+                    const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setItems(data);
+                } catch (err) {
+                    console.error("Error fetching items", err);
+                }
+                setLoading(false);
+            };
+
+            const fetchCategories = async () => {
+                try {
+                    const querySnapshot = await getDocs(collection(db, "categories"));
+                    const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setCategories(data);
+                } catch (err) {
+                    console.error("Error fetching categories", err);
+                }
+            };
+
+            const handleLogout = () => {
+                signOut(auth);
+            };
+
+            const handleSyncInitialCategories = async () => {
+                if(!window.confirm("ئایا دڵنیایت دەتەوێت بەشە سەرەتاییەکان بخەیتە ناو داتابەیس؟")) return;
+                setSyncingCategories(true);
+                try {
+                    for (const cat of initialCategories) {
+                        await setDoc(doc(db, "categories", cat.id), {
+                            label: cat.label,
+                            img: cat.img,
+                            order: initialCategories.indexOf(cat)
+                        });
+                    }
+                    await fetchCategories();
+                    alert("سەرکەوتوو بوو! بەشە سەرەتاییەکان زیاد کران.");
+                } catch(e) {
+                    alert("هەڵەیەک ڕوویدا: " + e.message);
+                }
+                setSyncingCategories(false);
+            };
+
+            const uploadFileToStorage = async (file, folder) => {
+                if (file.size > 5 * 1024 * 1024) {
+                    alert("ببوورە قەبارەی وێنەکە نابێت لە ٥ مێگابایت گەورەتر بێت.");
+                    return null;
+                }
+                const storageRef = ref(storage, `${folder}/${Date.now()}_${file.name}`);
+                await uploadBytes(storageRef, file);
+                return await getDownloadURL(storageRef);
+            };
+
+            const handleItemFileChange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                setUploadingImage(true);
+                const url = await uploadFileToStorage(file, 'menu_images');
+                if (url) setCurrentItem({...currentItem, img: url});
+                setUploadingImage(false);
+            };
+
+            const handleCatFileChange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                setUploadingImage(true);
+                const url = await uploadFileToStorage(file, 'category_images');
+                if (url) setCurrentCategory({...currentCategory, img: url});
+                setUploadingImage(false);
+            };
+
+            const handleSaveItem = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                try {
+                    if (currentItem.id) {
+                        const { id, ...dataToSave } = currentItem;
+                        await updateDoc(doc(db, "menuItems", id), dataToSave);
+                    } else {
+                        await addDoc(collection(db, "menuItems"), currentItem);
+                    }
+                    setIsEditing(false);
+                    fetchData();
+                } catch (err) {
+                    console.error("Error saving item", err);
+                    alert("کێشەیەک ڕوویدا!");
+                }
+                setLoading(false);
+            };
+
+            const handleSaveCategory = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                try {
+                    if (currentCategory.id && currentCategory.isExisting) {
+                        const { id, isExisting, ...dataToSave } = currentCategory;
+                        await updateDoc(doc(db, "categories", id), dataToSave);
+                    } else {
+                        const { isExisting, id, ...dataToSave } = currentCategory;
+                        // Use the provided ID or auto-generate if missing. Actually let's force an ID or use addDoc.
+                        if (id) {
+                            await setDoc(doc(db, "categories", id), dataToSave);
+                        } else {
+                            await addDoc(collection(db, "categories"), dataToSave);
+                        }
+                    }
+                    setIsEditingCategory(false);
+                    fetchCategories();
+                } catch (err) {
+                    console.error("Error saving category", err);
+                    alert("کێشەیەک ڕوویدا!");
+                }
+                setLoading(false);
+            };
+
+            const handleDeleteItem = async (id) => {
+                if (window.confirm("ئایا دڵنیایت لە سڕینەوەی ئەم بەرهەمە؟")) {
+                    setLoading(true);
+                    try {
+                        await deleteDoc(doc(db, "menuItems", id));
+                        fetchData();
+                    } catch (err) {
+                        console.error(err);
+                    }
+                    setLoading(false);
+                }
+            };
+
+            const handleDeleteCategory = async (id) => {
+                if (window.confirm("ئایا دڵنیایت لە سڕینەوەی ئەم بەشە؟")) {
+                    try {
+                        await deleteDoc(doc(db, "categories", id));
+                        fetchCategories();
+                    } catch (err) {
+                        console.error(err);
+                    }
+                }
+            };
+
+            if (authLoading) return <div className="min-h-screen bg-black flex items-center justify-center"><div className="loader w-12 h-12"></div></div>;
+            if (!user) return <LoginPage />;
+            if (!isAdmin) return <div className="min-h-screen bg-black text-white flex items-center justify-center p-4 text-center"><div className="bg-red-500/10 border border-red-500/30 text-red-400 p-8 rounded-2xl max-w-md"><h2 className="text-2xl font-bold mb-4">ببوورە!</h2><p>ئەم هەژمارە ڕێگەپێدراو نییە بۆ بینینی ئەدمین پەنێڵ.</p><button onClick={handleLogout} className="mt-6 px-6 py-2 bg-red-500/20 rounded-xl hover:bg-red-500/30 transition-colors">چوونەدەرەوە</button></div></div>;
+
+            const filteredItems = items.filter(item => {
+                if (selectedCategoryFilter !== 'all' && item.cat !== selectedCategoryFilter) return false;
+                if (searchTerm) {
+                    const q = searchTerm.toLowerCase();
+                    return ((item.name.ku && item.name.ku.toLowerCase().includes(q)) || (item.name.en && item.name.en.toLowerCase().includes(q)));
+                }
+                return true;
+            });
+
+            // Use dynamic categories for dropdowns, fallback to empty array
+            const displayCategories = categories.length > 0 ? categories : [];
+
+            return (
+                <div className="flex min-h-screen bg-black text-white">
+                    {/* SIDEBAR */}
+                    <aside className="w-72 bg-neutral-900/50 border-l border-white/5 flex flex-col backdrop-blur-xl sticky top-0 h-screen hidden md:flex">
+                        <div className="p-8 border-b border-white/5 flex flex-col items-center">
+                            <div className="w-20 h-20 rounded-full border-2 border-amber-500 p-1 mb-4">
+                                <img src="https://scared-moccasin-vmjwkvdcjg.edgeone.app/cafe-logo.png" className="w-full h-full rounded-full object-cover bg-black" />
+                            </div>
+                            <h2 className="text-2xl font-bold font-serif tracking-widest">DÊRAN</h2>
+                            <p className="text-[10px] text-amber-500 uppercase tracking-widest mt-1">Admin Portal</p>
+                        </div>
+                        
+                        <nav className="flex-1 p-4 space-y-2">
+                            <button onClick={()=>setActiveView('dashboard')} className={`w-full flex items-center gap-3 px-5 py-4 rounded-xl transition-all ${activeView === 'dashboard' ? 'bg-amber-500 text-black font-bold shadow-lg shadow-amber-500/20' : 'text-neutral-400 hover:bg-white/5 hover:text-white'}`}>
+                                <Utensils size={20} />
+                                <span>لیستی بەرهەمەکان</span>
+                            </button>
+                            <button onClick={()=>setActiveView('categories')} className={`w-full flex items-center gap-3 px-5 py-4 rounded-xl transition-all ${activeView === 'categories' ? 'bg-amber-500 text-black font-bold shadow-lg shadow-amber-500/20' : 'text-neutral-400 hover:bg-white/5 hover:text-white'}`}>
+                                <Layers size={20} />
+                                <span>بەشەکان (Categories)</span>
+                            </button>
+                            <button onClick={()=>setActiveView('settings')} className={`w-full flex items-center gap-3 px-5 py-4 rounded-xl transition-all ${activeView === 'settings' ? 'bg-amber-500 text-black font-bold shadow-lg shadow-amber-500/20' : 'text-neutral-400 hover:bg-white/5 hover:text-white'}`}>
+                                <Settings size={20} />
+                                <span>ڕێکخستنەکان</span>
+                            </button>
+                        </nav>
+
+                        <div className="p-4 border-t border-white/5">
+                            <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all">
+                                <LogOut size={20} />
+                                <span className="font-bold">چوونەدەرەوە</span>
+                            </button>
+                        </div>
+                    </aside>
+
+                    {/* MOBILE TOPBAR */}
+                    <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-neutral-900/80 backdrop-blur-xl border-b border-white/5 z-50 flex items-center justify-between px-4">
+                        <div className="flex gap-2">
+                            <button onClick={()=>setActiveView('dashboard')} className={`p-2 rounded-lg ${activeView === 'dashboard' ? 'text-amber-500 bg-amber-500/10' : 'text-neutral-400'}`}><Utensils size={24}/></button>
+                            <button onClick={()=>setActiveView('categories')} className={`p-2 rounded-lg ${activeView === 'categories' ? 'text-amber-500 bg-amber-500/10' : 'text-neutral-400'}`}><Layers size={24}/></button>
+                            <button onClick={()=>setActiveView('settings')} className={`p-2 rounded-lg ${activeView === 'settings' ? 'text-amber-500 bg-amber-500/10' : 'text-neutral-400'}`}><Settings size={24}/></button>
+                        </div>
+                        <h2 className="font-serif font-bold text-xl tracking-widest">DÊRAN</h2>
+                        <button onClick={handleLogout} className="p-2 text-red-400"><LogOut size={24}/></button>
+                    </div>
+
+                    {/* MAIN CONTENT */}
+                    <main className="flex-1 p-6 md:p-10 md:pt-10 pt-24 overflow-y-auto">
+                        
+                        {activeView === 'settings' && <SettingsView />}
+
+                        {/* CATEGORIES VIEW */}
+                        {activeView === 'categories' && (
+                            <div className="max-w-4xl mx-auto">
+                                <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-10">
+                                    <div>
+                                        <h2 className="text-3xl font-bold mb-2">بەڕێوەبردنی بەشەکان</h2>
+                                        <p className="text-neutral-500 text-sm">بەشی نوێ زیادبکە، یان ناو و وێنەی بەشەکان بگۆڕە کە لە سەرەوەی مێنیوەکە دەردەکەون.</p>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button onClick={handleSyncInitialCategories} disabled={syncingCategories} className="px-5 py-4 bg-neutral-800 hover:bg-neutral-700 text-white font-bold rounded-xl flex items-center gap-2 border border-white/10 transition-colors">
+                                            {syncingCategories ? <div className="loader border-white border-t-transparent"></div> : <Upload size={20} />} گەڕاندنەوەی هەموو بەشەکان
+                                        </button>
+                                        <button onClick={() => { setCurrentCategory({id: '', label:{ku:'',en:''}, img:''}); setIsEditingCategory(true); }} className="px-6 py-4 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-amber-500/20">
+                                            <Plus size={20} /> بەشێکی نوێ دروستبکە
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {categories.map(cat => (
+                                        <div key={cat.id} className="bg-neutral-900/50 border border-white/5 rounded-2xl overflow-hidden group hover:border-amber-500/30 transition-all flex items-center p-4 gap-4">
+                                            <div className="w-16 h-16 rounded-xl bg-black overflow-hidden flex-shrink-0">
+                                                {cat.img ? <img src={cat.img} className="w-full h-full object-cover" /> : <ImageIcon className="w-8 h-8 m-4 text-neutral-600"/>}
+                                            </div>
+                                            <div className="flex-1">
+                                                <h3 className="font-bold text-white">{cat.label?.ku || cat.id}</h3>
+                                                <p className="text-xs text-neutral-500 dir-ltr text-left">{cat.label?.en || cat.id}</p>
+                                            </div>
+                                            <div className="flex flex-col gap-2">
+                                                <button onClick={() => { setCurrentCategory({...cat, isExisting: true}); setIsEditingCategory(true); }} className="p-2 bg-white/5 hover:bg-amber-500/20 text-neutral-400 hover:text-amber-500 rounded-lg transition-colors"><Edit2 size={16}/></button>
+                                                <button onClick={() => handleDeleteCategory(cat.id)} className="p-2 bg-white/5 hover:bg-red-500/20 text-neutral-400 hover:text-red-500 rounded-lg transition-colors"><Trash2 size={16}/></button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* DASHBOARD (ITEMS) VIEW */}
+                        {activeView === 'dashboard' && (
+                            <div className="max-w-6xl mx-auto">
+                                <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-10">
+                                    <div>
+                                        <h2 className="text-3xl font-bold mb-2">بەڕێوەبردنی بەرهەمەکان</h2>
+                                        <p className="text-neutral-500 text-sm">زیادکردن، سڕینەوە، یان گۆڕانکاری بکە لە بەرهەمەکانی کافێکەت.</p>
+                                    </div>
+                                    <button onClick={() => { setCurrentItem({cat: categories[0]?.id || 'hookah', name:{ku:'',en:''}, desc:{ku:'',en:''}, price:0}); setIsEditing(true); }} className="px-6 py-4 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-amber-500/20">
+                                        <Plus size={20} /> بەرهەمی نوێ زیادبکە
+                                    </button>
+                                </div>
+                                
+                                <div className="flex flex-col md:flex-row gap-4 items-center bg-neutral-900/50 p-3 rounded-2xl border border-white/5 backdrop-blur-sm mb-8">
+                                    <div className="relative flex-1 w-full">
+                                        <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500" size={20} />
+                                        <input 
+                                            type="text" 
+                                            placeholder="گەڕان بەدوای ناو..." 
+                                            value={searchTerm} 
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="w-full bg-black/40 border border-white/5 rounded-xl py-4 pr-12 pl-4 text-white placeholder:text-neutral-600 focus:border-amber-500 transition-colors"
+                                        />
+                                    </div>
+                                    <select 
+                                        value={selectedCategoryFilter} 
+                                        onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+                                        className="w-full md:w-64 bg-black/40 border border-white/5 rounded-xl py-4 px-4 text-white appearance-none cursor-pointer focus:border-amber-500 transition-colors"
+                                    >
+                                        <option value="all">هەموو بەشەکان</option>
+                                        {displayCategories.map(cat => (
+                                            <option key={cat.id} value={cat.id}>{cat.label?.ku || cat.id}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {loading ? (
+                                    <div className="py-32 flex justify-center"><div className="loader w-16 h-16 border-4"></div></div>
+                                ) : (
+                                    <div className="space-y-12">
+                                        {displayCategories.filter(cat => selectedCategoryFilter === 'all' || cat.id === selectedCategoryFilter).map(category => {
+                                            const catItems = filteredItems.filter(item => item.cat === category.id);
+                                            if (catItems.length === 0) return null;
+                                            
+                                            return (
+                                                <div key={category.id} className="space-y-6">
+                                                    <div className="flex items-center gap-4 border-b border-white/10 pb-4">
+                                                        <div className="w-10 h-10 rounded-lg bg-neutral-800 overflow-hidden flex-shrink-0">
+                                                            {category.img ? <img src={category.img} className="w-full h-full object-cover" /> : <Layers className="w-full h-full p-2 text-amber-500" />}
+                                                        </div>
+                                                        <h3 className="text-2xl font-bold text-amber-500">{category.label?.ku || category.id}</h3>
+                                                        <span className="text-neutral-500 bg-neutral-900 px-3 py-1 rounded-full text-sm font-bold border border-white/5 shadow-inner">{catItems.length} دانە</span>
+                                                    </div>
+                                                    
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                                        {catItems.map(item => (
+                                                            <div key={item.id} className="bg-neutral-900/50 border border-white/5 rounded-2xl overflow-hidden group hover:border-amber-500/30 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-amber-500/10 flex flex-col h-full">
+                                                                <div className="aspect-[4/3] bg-black relative overflow-hidden flex-shrink-0">
+                                                                    {item.img ? (
+                                                                        <img src={item.img} alt={item.name.ku} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity group-hover:scale-105 duration-500" />
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex items-center justify-center text-neutral-700"><ImageIcon size={40}/></div>
+                                                                    )}
+                                                                    <div className="absolute top-3 right-3 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 font-bold text-amber-500">
+                                                                        {item.price.toLocaleString()} دینار
+                                                                    </div>
+                                                                </div>
+                                                                <div className="p-5 flex-1 flex flex-col">
+                                                                    <h3 className="font-bold text-lg text-white mb-1">{item.name.ku} <span className="text-sm font-normal text-neutral-500 dir-ltr inline-block ml-2">{item.name.en}</span></h3>
+                                                                    {item.sub && <p className="text-[10px] text-amber-500/70 mb-4 bg-amber-500/10 inline-block px-2 py-1 rounded border border-amber-500/20 self-start uppercase tracking-widest">{item.sub}</p>}
+                                                                    
+                                                                    <div className="flex gap-2 pt-4 border-t border-white/5 mt-auto">
+                                                                        <button onClick={() => { setCurrentItem(item); setIsEditing(true); }} className="flex-1 bg-white/5 hover:bg-amber-500/20 hover:text-amber-500 text-neutral-400 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors text-sm font-bold">
+                                                                            <Edit2 size={16} /> دەستکاری
+                                                                        </button>
+                                                                        <button onClick={() => handleDeleteItem(item.id)} className="flex-1 bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-neutral-400 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors text-sm font-bold">
+                                                                            <Trash2 size={16} /> سڕینەوە
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+
+                                        {filteredItems.filter(item => !displayCategories.find(c => c.id === item.cat)).length > 0 && (
+                                            <div className="space-y-6">
+                                                <div className="flex items-center gap-4 border-b border-white/10 pb-4">
+                                                    <h3 className="text-2xl font-bold text-red-500">بێ بەش (کێشە)</h3>
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                                    {filteredItems.filter(item => !displayCategories.find(c => c.id === item.cat)).map(item => (
+                                                            <div key={item.id} className="bg-neutral-900/50 border border-white/5 rounded-2xl overflow-hidden group hover:border-amber-500/30 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-amber-500/10 flex flex-col h-full">
+                                                                <div className="aspect-[4/3] bg-black relative overflow-hidden flex-shrink-0">
+                                                                    {item.img ? (
+                                                                        <img src={item.img} alt={item.name.ku} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity group-hover:scale-105 duration-500" />
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex items-center justify-center text-neutral-700"><ImageIcon size={40}/></div>
+                                                                    )}
+                                                                    <div className="absolute top-3 right-3 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 font-bold text-amber-500">
+                                                                        {item.price.toLocaleString()} دینار
+                                                                    </div>
+                                                                </div>
+                                                                <div className="p-5 flex-1 flex flex-col">
+                                                                    <h3 className="font-bold text-lg text-white mb-1">{item.name.ku} <span className="text-sm font-normal text-neutral-500 dir-ltr inline-block ml-2">{item.name.en}</span></h3>
+                                                                    <p className="text-xs text-red-500/70 mb-4 bg-red-500/10 inline-block px-2 py-1 rounded border border-red-500/20 self-start">بەشەکەی سڕاوەتەوە: {item.cat}</p>
+                                                                    
+                                                                    <div className="flex gap-2 pt-4 border-t border-white/5 mt-auto">
+                                                                        <button onClick={() => { setCurrentItem(item); setIsEditing(true); }} className="flex-1 bg-white/5 hover:bg-amber-500/20 hover:text-amber-500 text-neutral-400 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors text-sm font-bold">
+                                                                            <Edit2 size={16} /> دەستکاری
+                                                                        </button>
+                                                                        <button onClick={() => handleDeleteItem(item.id)} className="flex-1 bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-neutral-400 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors text-sm font-bold">
+                                                                            <Trash2 size={16} /> سڕینەوە
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {filteredItems.length === 0 && (
+                                            <div className="col-span-full py-24 text-center text-neutral-500 bg-neutral-900/30 rounded-3xl border border-white/5 border-dashed">
+                                                <Search className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                                                <p className="text-lg font-bold">هیچ بەرهەمێک نەدۆزرایەوە</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </main>
+
+                    {/* EDIT CATEGORY MODAL */}
+                    {isEditingCategory && (
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+                            <div className="bg-neutral-900 border border-white/10 w-full max-w-lg rounded-3xl shadow-2xl relative my-8 animate-in fade-in zoom-in-95 duration-200">
+                                <button onClick={() => setIsEditingCategory(false)} className="absolute top-6 left-6 text-neutral-500 hover:text-white bg-black/50 p-2 rounded-full hover:bg-red-500 transition-colors z-10">
+                                    <X size={24} />
+                                </button>
+                                
+                                <div className="p-8">
+                                    <h3 className="text-2xl font-bold mb-8 flex items-center gap-3">
+                                        <span className="w-2 h-8 bg-amber-500 rounded-full"></span>
+                                        {currentCategory.isExisting ? 'دەستکاریکردنی بەش' : 'دروستکردنی بەشێکی نوێ'}
+                                    </h3>
+                                    
+                                    <form onSubmit={handleSaveCategory} className="space-y-6">
+                                        {!currentCategory.isExisting && (
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-bold text-neutral-400">ئایدی بەش (بۆ نموونە: cold_drinks) بە ئینگلیزی بێ بۆشایی *</label>
+                                                <input type="text" required value={currentCategory.id} onChange={(e) => setCurrentCategory({...currentCategory, id: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_')})} className="w-full px-4 py-3 rounded-xl focus:border-amber-500 text-left" dir="ltr" />
+                                            </div>
+                                        )}
+
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-neutral-400">ناوی بەش (بە کوردی) *</label>
+                                            <input type="text" required value={currentCategory.label?.ku || ''} onChange={(e) => setCurrentCategory({...currentCategory, label: {...currentCategory.label, ku: e.target.value}})} className="w-full px-4 py-3 rounded-xl focus:border-amber-500" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-neutral-400">ناوی بەش (بە ئینگلیزی) *</label>
+                                            <input type="text" required value={currentCategory.label?.en || ''} onChange={(e) => setCurrentCategory({...currentCategory, label: {...currentCategory.label, en: e.target.value}})} className="w-full px-4 py-3 rounded-xl focus:border-amber-500 text-left" dir="ltr" />
+                                        </div>
+
+                                        <div className="space-y-2 bg-black/40 p-4 border border-white/5 rounded-2xl">
+                                            <label className="text-sm font-bold text-neutral-400 mb-2 block border-b border-white/5 pb-2">وێنەی بەش</label>
+                                            
+                                            <div className="flex gap-4 mb-4">
+                                                <input type="url" placeholder="لینکەی وێنەکە لێرە دابنێ" value={currentCategory.img || ''} onChange={(e) => setCurrentCategory({...currentCategory, img: e.target.value})} className="flex-1 px-4 py-3 rounded-xl focus:border-amber-500 text-left text-sm" dir="ltr" />
+                                            </div>
+
+                                            <div className="relative">
+                                                <input type="file" accept="image/*" onChange={handleCatFileChange} ref={catFileInputRef} className="hidden" />
+                                                <button type="button" onClick={()=>catFileInputRef.current?.click()} disabled={uploadingImage} className="w-full border-2 border-dashed border-amber-500/30 hover:border-amber-500 bg-amber-500/5 hover:bg-amber-500/10 text-amber-500 py-6 rounded-xl flex flex-col items-center justify-center gap-2 transition-all">
+                                                    {uploadingImage ? (
+                                                        <div className="loader border-amber-500/20 border-t-amber-500"></div>
+                                                    ) : (
+                                                        <><Upload size={24} /><span className="font-bold">ئەپلۆدی وێنە (ماکس ٥ مێگابایت)</span></>
+                                                    )}
+                                                </button>
+                                            </div>
+                                            
+                                            {currentCategory.img && (
+                                                <div className="mt-4 w-24 h-24 rounded-xl border border-white/10 overflow-hidden relative group">
+                                                    <img src={currentCategory.img} className="w-full h-full object-cover" />
+                                                    <button type="button" onClick={()=>setCurrentCategory({...currentCategory, img:''})} className="absolute inset-0 bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Trash2 size={20}/>
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="pt-6 border-t border-white/5 flex gap-4">
+                                            <button type="submit" disabled={loading || uploadingImage} className="flex-1 bg-amber-500 hover:bg-amber-400 text-black font-bold py-4 rounded-xl transition-colors flex items-center justify-center gap-2">
+                                                {loading ? <div className="loader border-black border-t-transparent"></div> : <><Save size={20} /> پاشەکەوتکردن</>}
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* EDIT ITEM MODAL */}
+                    {isEditing && (
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+                            <div className="bg-neutral-900 border border-white/10 w-full max-w-2xl rounded-3xl shadow-2xl relative my-8 animate-in fade-in zoom-in-95 duration-200">
+                                <button onClick={() => setIsEditing(false)} className="absolute top-6 left-6 text-neutral-500 hover:text-white bg-black/50 p-2 rounded-full hover:bg-red-500 transition-colors z-10">
+                                    <X size={24} />
+                                </button>
+                                
+                                <div className="p-8">
+                                    <h3 className="text-2xl font-bold mb-8 flex items-center gap-3">
+                                        <span className="w-2 h-8 bg-amber-500 rounded-full"></span>
+                                        {currentItem.id ? 'دەستکاریکردنی بەرهەم' : 'زیادکردنی بەرهەمی نوێ'}
+                                    </h3>
+                                    
+                                    <form onSubmit={handleSaveItem} className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-bold text-neutral-400">ناوی کوردی *</label>
+                                                <input type="text" required value={currentItem.name.ku} onChange={(e) => setCurrentItem({...currentItem, name: {...currentItem.name, ku: e.target.value}})} className="w-full px-4 py-3 rounded-xl focus:border-amber-500" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-bold text-neutral-400">ناوی ئینگلیزی *</label>
+                                                <input type="text" required value={currentItem.name.en} onChange={(e) => setCurrentItem({...currentItem, name: {...currentItem.name, en: e.target.value}})} className="w-full px-4 py-3 rounded-xl focus:border-amber-500 text-left" dir="ltr" />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-bold text-neutral-400">بەش (Category) *</label>
+                                                <select value={currentItem.cat} onChange={(e) => setCurrentItem({...currentItem, cat: e.target.value})} className="w-full px-4 py-3 rounded-xl focus:border-amber-500">
+                                                    {displayCategories.map(cat => (
+                                                        <option key={cat.id} value={cat.id}>{cat.label?.ku || cat.id}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-bold text-neutral-400">بەشی لاوەکی (ئارەزوومەندانە)</label>
+                                                <input type="text" placeholder="بۆ نموونە: pizza, sides" value={currentItem.sub || ''} onChange={(e) => setCurrentItem({...currentItem, sub: e.target.value})} className="w-full px-4 py-3 rounded-xl focus:border-amber-500 text-left" dir="ltr" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-bold text-neutral-400">نرخ (دینار) *</label>
+                                                <input type="number" required min="0" value={currentItem.price} onChange={(e) => setCurrentItem({...currentItem, price: Number(e.target.value)})} className="w-full px-4 py-3 rounded-xl focus:border-amber-500 text-left" dir="ltr" />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2 bg-black/40 p-4 border border-white/5 rounded-2xl">
+                                            <label className="text-sm font-bold text-neutral-400 mb-2 block border-b border-white/5 pb-2">وێنەی بەرهەم (دانانی لینک یان ئەپلۆدکردن)</label>
+                                            
+                                            <div className="flex gap-4 mb-4">
+                                                <input type="url" placeholder="لینکەی وێنەکە لێرە دابنێ (http://...)" value={currentItem.img || ''} onChange={(e) => setCurrentItem({...currentItem, img: e.target.value})} className="flex-1 px-4 py-3 rounded-xl focus:border-amber-500 text-left text-sm" dir="ltr" />
+                                            </div>
+
+                                            <div className="relative">
+                                                <input type="file" accept="image/*" onChange={handleItemFileChange} ref={fileInputRef} className="hidden" />
+                                                <button type="button" onClick={()=>fileInputRef.current?.click()} disabled={uploadingImage} className="w-full border-2 border-dashed border-amber-500/30 hover:border-amber-500 bg-amber-500/5 hover:bg-amber-500/10 text-amber-500 py-6 rounded-xl flex flex-col items-center justify-center gap-2 transition-all">
+                                                    {uploadingImage ? (
+                                                        <div className="loader border-amber-500/20 border-t-amber-500"></div>
+                                                    ) : (
+                                                        <>
+                                                            <Upload size={24} />
+                                                            <span className="font-bold">فایلێک هەڵبژێرە لە ناو ئامێرەکەت (ماکس ٥ مێگابایت)</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                            
+                                            {currentItem.img && (
+                                                <div className="mt-4 w-24 h-24 rounded-xl border border-white/10 overflow-hidden relative group">
+                                                    <img src={currentItem.img} className="w-full h-full object-cover" />
+                                                    <button type="button" onClick={()=>setCurrentItem({...currentItem, img:''})} className="absolute inset-0 bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Trash2 size={20}/>
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-bold text-neutral-400">وەسف (کوردی)</label>
+                                                <textarea value={currentItem.desc?.ku || ''} onChange={(e) => setCurrentItem({...currentItem, desc: {...currentItem.desc, ku: e.target.value}})} className="w-full px-4 py-3 rounded-xl focus:border-amber-500 h-24 resize-none"></textarea>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-bold text-neutral-400">وەسف (ئینگلیزی)</label>
+                                                <textarea value={currentItem.desc?.en || ''} onChange={(e) => setCurrentItem({...currentItem, desc: {...currentItem.desc, en: e.target.value}})} className="w-full px-4 py-3 rounded-xl focus:border-amber-500 h-24 resize-none text-left" dir="ltr"></textarea>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-6 border-t border-white/5 flex gap-4">
+                                            <button type="submit" disabled={loading || uploadingImage} className="flex-1 bg-amber-500 hover:bg-amber-400 text-black font-bold py-4 rounded-xl transition-colors flex items-center justify-center gap-2">
+                                                {loading ? <div className="loader border-black border-t-transparent"></div> : <><Save size={20} /> پاشەکەوتکردن</>}
+                                            </button>
+                                            <button type="button" onClick={() => setIsEditing(false)} className="px-8 bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-xl transition-colors">
+                                                پاشگەزبوونەوە
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

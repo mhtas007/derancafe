@@ -1,0 +1,21 @@
+{
+  "name": "Dêran Café Menu",
+  "short_name": "Dêran",
+  "description": "Dêran Cafe & Hookah Lounge Menu",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "icons": [
+    {
+      "src": "https://scared-moccasin-vmjwkvdcjg.edgeone.app/cafe-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://scared-moccasin-vmjwkvdcjg.edgeone.app/cafe-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
